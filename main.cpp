@@ -2,62 +2,115 @@
 #include "include/tesseract.hpp"
 #include <chrono>
 #include <thread>
+#include <iostream>
+#include <string>
+
+void show_help() {
+    PrettyCLI::drawLogo();
+    std::cout << "\n";
+    std::cout << "┌─ Astra 하드웨어 가속 엔진 ─────────────────────────────────┐\n";
+    std::cout << "│ 사용법:                                                  │\n";
+    std::cout << "│                                                           │\n";
+    std::cout << "│  ☆ SIMD 벡터/행렬 연산 (AoSoA + SIMD + Zero-Copy)        │\n";
+    std::cout << "│     astra simd <파일.csv> <연산>                          │\n";
+    std::cout << "│     연산: add, sub, mul, div, dot, cross, matmul         │\n";
+    std::cout << "│                                                           │\n";
+    std::cout << "│  ☆ Tesseract 엔진 정보                                   │\n";
+    std::cout << "│     astra tessaract [옵션]                               │\n";
+    std::cout << "│     옵션: info (기본정보), bench (벤치마크)               │\n";
+    std::cout << "│                                                           │\n";
+    std::cout << "│  ☆ 도움말                                                │\n";
+    std::cout << "│     astra --help, astra -h                                │\n";
+    std::cout << "└─────────────────────────────────────────────────────────┘\n";
+}
 
 int main(int argc, char* argv[]) {
     PrettyCLI::initTerminal();
-    PrettyCLI::drawLogo();
 
-    /*
-    PrettyCLI::info("Astra 패키지 다운로드 중...");
+    // 인자가 없거나 도움말 요청
+    if (argc < 2) {
+        show_help();
+        return 0;
+    }
 
-    // 예시: 실제 환경에서는 다운로드한 바이트 수나 파일 청크 수(chunk)가 될 수 있어.
-    long long totalBytes = 52428800; // 50MB 짜리 패키지라고 가정
-    long long downloadedBytes = 0;
-    long long chunkSize = 51200;    // 한 번에 50KB씩 읽어옴 (루프가 총 1024번 돎)
+    std::string cmd = argv[1];
 
-    // ★ 핵심: 이전 퍼센트를 기억할 변수 (-1로 초기화)
-    int lastPercent = -1;
+    // ========================================
+    // 1. 도움말 명령어
+    // ========================================
+    if (cmd == "--help" || cmd == "-h" || cmd == "help") {
+        show_help();
+        return 0;
+    }
 
-    while (downloadedBytes < totalBytes) {
-        // 다운로드 시뮬레이션 (실제로는 여기서 네트워크나 파일 I/O가 일어남)
-        downloadedBytes += chunkSize;
-        if (downloadedBytes > totalBytes) downloadedBytes = totalBytes;
-
-        // 진행률 계산 (0.0 ~ 1.0)
-        double progress = static_cast<double>(downloadedBytes) / totalBytes;
-
-        // 현재 정수 퍼센트 계산 (0 ~ 100)
-        int currentPercent = static_cast<int>(progress * 100.0);
-
-        // ★ [조건문] 퍼센트가 실제로 변했을 때만 화면을 새로 그린다!
-        // 이 조건 덕분에 루프가 10만 번을 돌든 100만 번을 돌든, drawProgressBar는 딱 100번만 실행됨.
-        if (currentPercent != lastPercent) {
-            PrettyCLI::drawProgressBar("bluskpm/socket", progress);
-            lastPercent = currentPercent; // 최신 퍼센트로 업데이트
+    // ========================================
+    // 2. SIMD 벡터/행렬 연산 명령어
+    // ========================================
+    if (cmd == "simd") {
+        if (argc < 4) {
+            PrettyCLI::drawLogo();
+            std::cout << "사용법: astra simd <파일경로.csv> <add|sub|mul|div|dot|cross|matmul>\n";
+            std::cout << "예제:   astra simd data/vector.csv add\n";
+            return 1;
         }
 
-        // CPU 과점 방지 및 시뮬레이션을 위한 미세한 딜레이
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::string filename = argv[2];
+        std::string operation = argv[3];
+
+        Tesseract::run_simd_analyzer(filename, operation);
+        return 0;
     }
 
-    std::cout << "\n"; // 진행 바 끝나면 줄 바꿈
-    PrettyCLI::success("패키지 설치가 완료되었습니다.");
+    // ========================================
+    // 3. Tesseract 엔진 정보 명령어
+    // ========================================
+    if (cmd == "tessaract") {
+        std::string option = (argc >= 3) ? argv[2] : "info";
 
-    */
-
-    PrettyCLI::initTerminal();
-
-    // 사용법 안내: simd <파일이름> <연산자>
-    if (argc < 4 || std::string(argv[1]) != "simd") {
         PrettyCLI::drawLogo();
-        std::cout << "사용법: .\\Astra.exe simd <파일경로.csv> <add|sub>\n";
-        return 1;
+        std::cout << "\n";
+
+        if (option == "info") {
+            std::cout << "┌─ Tesseract 엔진 정보 ─────────────────────────────────────┐\n";
+            std::cout << "│ Astra 하드웨어 가속 SIMD 연산 엔진                       │\n";
+            std::cout << "│                                                           │\n";
+            std::cout << "│ 기술 스택:                                              │\n";
+            std::cout << "│  ├─ 구조: AoSoA (Array of Structures of Arrays)         │\n";
+            std::cout << "│  ├─ 배치 크기: 8 (AVX2 = 256비트)                        │\n";
+            std::cout << "│  ├─ 메모리: Zero-Copy 포인터 연산                        │\n";
+            std::cout << "│  ├─ 정렬: 64바이트 캐시라인 정렬                         │\n";
+            std::cout << "│  └─ 플랫폼: Windows(x86-64) + Linux(x86-64) + ARM64    │\n";
+            std::cout << "│                                                           │\n";
+            std::cout << "│ 지원 벡터 연산 (4D):                                    │\n";
+            std::cout << "│  ├─ 기본: add, sub, mul, div                            │\n";
+            std::cout << "│  └─ 수학: dot product, cross product                    │\n";
+            std::cout << "│                                                           │\n";
+            std::cout << "│ 지원 행렬 연산 (4x4):                                   │\n";
+            std::cout << "│  └─ 행렬곱(matmul) - AoSoA 배치 처리                     │\n";
+            std::cout << "│                                                           │\n";
+            std::cout << "│ 성능 (9.5M 벡터 + 2.25M 행렬):                          │\n";
+            std::cout << "│  ├─ 벡터: ~20 MB/s (0.44 M ops/s)                       │\n";
+            std::cout << "│  └─ 행렬: ~22 MB/s (0.13 M ops/s)                       │\n";
+            std::cout << "│                                                           │\n";
+            std::cout << "│ 사용 예:                                                │\n";
+            std::cout << "│  astra simd data/vector.csv add                         │\n";
+            std::cout << "│  astra simd data/matrix.csv matmul                      │\n";
+            std::cout << "└─────────────────────────────────────────────────────────┘\n";
+        } else if (option == "bench") {
+            std::cout << "⚠️  벤치마크 모드 - 준비 중\n";
+        } else {
+            std::cout << "알 수 없는 옵션: " << option << "\n";
+            std::cout << "사용 가능한 옵션: info, bench\n";
+            return 1;
+        }
+
+        return 0;
     }
 
-    std::string filename = argv[2];
-    std::string operation = argv[3];
-
-    Tesseract::run_simd_analyzer(filename, operation);
-
-    return 0;
+    // ========================================
+    // 4. 알 수 없는 명령어
+    // ========================================
+    std::cout << "❌ 알 수 없는 명령어: " << cmd << "\n\n";
+    show_help();
+    return 1;
 }

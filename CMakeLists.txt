@@ -72,12 +72,21 @@ elseif(CMAKE_SYSTEM_PROCESSOR_LOWER STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR
         src/tesseract/arm64/tesseract.s
         src/tesseract/arm64/3Drenderer.s
     )
+
 else()
     message(FATAL_ERROR "Astra 엔진이 지원하지 않는 하드웨어 아키텍처입니다: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
-# 3. 최종 빌드 실행 파일 생성
-add_executable(Astra
-    ${COMMON_SOURCES}
-    ${OS_SPECIFIC_ASM}
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "/bin")
+
+add_executable(astra
+        ${COMMON_SOURCES}
+        ${OS_SPECIFIC_ASM}
+)
+
+set_target_properties(astra PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin"
 )

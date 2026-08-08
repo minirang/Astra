@@ -12,3 +12,4 @@ build/
 *.csv
 cmake-build-debug/
 .vscode/
+data/
